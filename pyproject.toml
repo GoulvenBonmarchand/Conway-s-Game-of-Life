@@ -7,7 +7,9 @@ authors = [
     { name = "GoulvenBonmarchand", email = "goulven.bonmarchand@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pygame>=2.6.1",
+]
 
 [project.scripts]
 conway-s-game-of-life = "conway_s_game_of_life:main"
