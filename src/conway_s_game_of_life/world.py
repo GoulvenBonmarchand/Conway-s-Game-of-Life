@@ -1,8 +1,34 @@
+import argparse
+
+import pygame
+
+p = argparse.ArgumentParser(
+    description="Jeu de la vie (Conway) - simulation."
+)
+p.add_argument("input", help="Chemin du fichier d'entrée (txt).")
+p.add_argument("output", help="Chemin du fichier de sortie (txt).")
+p.add_argument(
+    "-n",
+    "--steps",
+    type=int,
+    default=1,
+    help="Nombre d'itérations à simuler (défaut: 1).",
+)
+p.add_argument("taille", help="Taille de la fenêtre graphique (largeur,hauteur).")
+
 class Cell:
     def __init__(self, i, j):
         self._i = i
         self._j = j
     
+    def __eq__(self, other):
+        if not isinstance(other, Cell):
+            return NotImplemented
+        return self._i == other._i and self._j == other._j
+
+    def __hash__(self):
+        return hash((self._i, self._j))
+
     @property
     def loc(self):
         return (self._i, self._j)
@@ -23,7 +49,7 @@ class World:
     
     def to_file(self, file_path):
         with open(file_path, "w", encoding="utf-8") as f:
-            (min_i, min_j), (max_i, max_j) = self.dimension
+            min_i, min_j, max_i, max_j = self.taille
             for i in range(min_i, max_i + 1):
                 ligne = ""
                 for j in range(min_j, max_j + 1):
@@ -53,18 +79,18 @@ class World:
         return count
     
     @property
-    def dimension(self):
+    def taille(self):
         if not self._cells:
-            return (0, 0)
+            return (0, 0, 0, 0)
         max_i = max(cell.loc[0] for cell in self._cells)
         max_j = max(cell.loc[1] for cell in self._cells)
         min_i = min(cell.loc[0] for cell in self._cells)
         min_j = min(cell.loc[1] for cell in self._cells)
-        return ((min_i-1, min_j-1), (max_i + 1, max_j + 1))
+        return (min_i-1, min_j-1, max_i + 1, max_j + 1)
     
     def step(self):
         new_world = World()
-        (min_i, min_j), (max_i, max_j) = self.dimension
+        min_i, min_j, max_i, max_j = self.taille
         for i in range(min_i, max_i + 1):
             for j in range(min_j, max_j + 1):
                 alive = self.is_alive(i, j)
@@ -75,6 +101,24 @@ class World:
                     new_world.add_cell(i, j)
         self._cells = new_world._cells
     
-w = World.from_file("../data/glider.txt")
-w.step()
-w.to_file("../data/glider_step1.txt")
+class Simulation:
+    def __init__(self, world, steps):
+        self.world = world
+        self.steps = steps
+
+    def run(self, taille):
+        cell_size = 20
+        pygame.init()
+        screen = pygame.display.set_mode(taille)
+        pygame.display.set_caption("Jeu de la vie (Conway) - simulation")
+        clock = pygame.time.Clock()
+        running = True
+        
+        for _ in range(self.steps):
+            self.world.step()
+
+
+
+#w = World.from_file("data/glider.txt")
+#w.step()
+#w.to_file("data/glider_step1.txt")
