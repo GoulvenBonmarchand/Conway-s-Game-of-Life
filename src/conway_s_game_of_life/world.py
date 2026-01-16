@@ -11,11 +11,17 @@ p.add_argument(
     "-n",
     "--steps",
     type=int,
-    default=6000,
+    default=1000,
     help="Nombre d'itérations à simuler (défaut: 1000).",
 )
-p.add_argument("--taille", help="Taille de la fenêtre graphique (largeur,hauteur). Par défaut 30,30."
-               , default="50,50")
+p.add_argument("--taille", help="Taille de la fenêtre graphique (largeur,hauteur). Par défaut 40,40."
+               , default="40,40")
+p.add_argument(
+    "--fps",
+    type=int,
+    default=10,
+    help="Nombre de frames par seconde (défaut: 10).",
+)
 
 class Cell:
     def __init__(self, i, j):
@@ -81,7 +87,7 @@ class World:
     
     @property
     def cells(self):
-        return [(cell.loc[1], cell.loc[0]) for cell in self._cells]
+        return [(cell.loc[0], cell.loc[1]) for cell in self._cells]
     
     @property
     def taille(self):
@@ -111,19 +117,25 @@ class Simulation:
         self._world = world
         self._steps = steps
 
-    def run(self, taille):
+    def run(self, taille, FPS):
         cell_size = 20
         GRID_W, GRID_H = taille[0], taille[1] 
         WIN_W, WIN_H = GRID_W * cell_size, GRID_H * cell_size
         def draw(screen, alive_cells):
             screen.fill((255, 255, 255))  
+            # --- Grille ---
+            for x in range(0, WIN_W + 1, cell_size):
+                pygame.draw.line(screen, (220, 220, 220), (x, 0), (x, WIN_H))
+            for y in range(0, WIN_H + 1, cell_size):
+                pygame.draw.line(screen, (220, 220, 220), (0, y), (WIN_W, y))
+
+            # --- Cellules vivantes ---
             for (x, y) in alive_cells:
+                x, y = y, x  # colonne -> x, ligne -> y
                 if 0 <= x < GRID_W and 0 <= y < GRID_H:
                     rect = pygame.Rect(x * cell_size, y * cell_size, cell_size, cell_size)
                     pygame.draw.rect(screen, (0, 0, 0), rect)
             pygame.display.flip()
-
-        FPS = 20
         step = 0
         pygame.init()
         screen = pygame.display.set_mode((WIN_W, WIN_H))
@@ -140,26 +152,26 @@ class Simulation:
                 if event.type == pygame.QUIT:
                     running = False
 
-                if step >= self._steps:
-                    running = False
-
                 # Pause avec espace
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     paused = not paused
-
-                # --- Update simulation ---
-                if not paused:
-                    cells = self._world.cells
-                    self._world.step()
-
-                # --- Draw ---
+            
+            if step >= self._steps:
+                running = False
+            
+            if not paused:
+                cells = self._world.cells
+                self._world.step()
                 step += 1
-                draw(screen, cells)
+
+            draw(screen, cells)
 
         pygame.quit()
 
-w = World.from_file(p.parse_args().input)
-sim = Simulation(w, p.parse_args().steps)
-sim.run(tuple(int(x) for x in p.parse_args().taille.split(",")))
-if p.parse_args().output:
-    w.to_file(p.parse_args().output)
+def main():
+    args = p.parse_args()
+    w = World.from_file(args.input)
+    sim = Simulation(w, args.steps)
+    sim.run(tuple(int(x) for x in args.taille.split(",")), args.fps)
+    if args.output:
+        w.to_file(args.output)

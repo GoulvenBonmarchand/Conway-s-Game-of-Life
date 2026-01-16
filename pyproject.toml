@@ -12,8 +12,15 @@ dependencies = [
 ]
 
 [project.scripts]
-conway-s-game-of-life = "conway_s_game_of_life:main"
+conway-s-game-of-life = "conway_s_game_of_life.world:main"
+game = "conway_s_game_of_life.world:main"
 
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.13.1",
+    "pytest>=9.0.2",
+]
